@@ -1,6 +1,8 @@
 import express from 'express'
 import userRouter from './routes/users.routers'
 import databaseServices from './services/database.services'
+import { defaultErrorHandler } from './middlewares/error.middlewares'
+// console.log(new Date(2004, 6, 4).toISOString())
 
 //dùng express tạo seveer (app)
 const app = express()
@@ -14,6 +16,7 @@ app.use('/users', userRouter)
 
 //app mở ở port 3000
 //localhost:3000/users/get-me
+app.use(defaultErrorHandler)
 app.listen(PORT, () => {
   console.log(`Server is running on port: ` + PORT)
 })
