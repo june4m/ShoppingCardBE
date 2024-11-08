@@ -1,6 +1,6 @@
 import { JwtPayload } from 'jsonwebtoken'
 import { TokenType } from '~/constants/enums'
-
+import { ParsedQs } from 'qs'
 // File này lưu các định nghĩa request mà người dùng gửi lên
 export interface RegisterReqBody {
   name: string
@@ -20,4 +20,8 @@ export interface TokenPayLoad extends JwtPayload {
 }
 export interface LogoutReqBody {
   refresh_token: string
+}
+
+export interface VerifyEmailReqQuery extends ParsedQs {
+  email_verify_token: string
 }

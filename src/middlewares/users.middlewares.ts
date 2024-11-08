@@ -1,4 +1,5 @@
 //import các interface của express giúp em mô tả
+import { error } from 'console'
 import { verify } from 'crypto'
 import { Request, Response, NextFunction } from 'express'
 import { checkSchema, validationResult } from 'express-validator'
@@ -235,6 +236,56 @@ export const refreshTokenValidator = validate(
             return true
           }
         }
+      }
+    },
+    ['body']
+  )
+)
+
+//viết hàm kiểm tra email_verify_token
+
+export const emailVerifyTokenValidator = validate(
+  checkSchema(
+    {
+      email_verify_token: {
+        trim: true,
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.EMAIL_VERIFY_TOKEN_IS_REQUIRED
+        },
+        custom: {
+          options: async (value: string, { req }) => {
+            //value là email_verify_token luôn, không cần tìm, kiểm tra luôn
+            try {
+              const decode_email_verify_token = await verifyToken({
+                token: value,
+                privateKey: process.env.JWT_SECRET_EMAIL_VERIFY_TOKEN as string
+              })
+              // nếu mã hóa thành công thì lưu vào req dùng để ở các chỗ khác
+              ;(req as Request).decode_email_verify_token = decode_email_verify_token
+            } catch (error) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.UNAUTHORIZED, //401
+                message: (error as JsonWebTokenError).message
+              })
+            }
+            return true
+          }
+        }
+      }
+    },
+    ['query']
+  )
+)
+
+export const forgotPassWordValidator = validate(
+  checkSchema(
+    {
+      email: {
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.EMAIL_IS_REQUIRED
+        },
+        isEmail: true,
+        trim: true
       }
     },
     ['body']

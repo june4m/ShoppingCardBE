@@ -1,11 +1,20 @@
 import express, { Request, Response } from 'express'
 import {
   accessTokenValidator,
+  emailVerifyTokenValidator,
+  forgotPassWordValidator,
   loginValidator,
   refreshTokenValidator,
   registerValidator
 } from '~/middlewares/users.middlewares'
-import { loginController, logoutController, registerController } from '~/controllers/users.controllers'
+import {
+  forgotPasswordController,
+  loginController,
+  logoutController,
+  registerController,
+  resendVerifyEmailController,
+  verifyEmailTokenController
+} from '~/controllers/users.controllers'
 import { wrapAsync } from '~/utils/handlers'
 const userRouter = express.Router()
 
@@ -53,4 +62,47 @@ body:{
 */
 // tách ra access và refresh tại vì mình sử dụng accesss nhiều hơn
 userRouter.post('/logout', accessTokenValidator, refreshTokenValidator, wrapAsync(logoutController))
+/*
+desc: verify email
+sự kiện này diễn ra khi người dùng nhấn vào link có trong email của họ
+thì evt sẽ được gửi lên server be thông qua req.query
+path: users/verify-email/?email_verify_token=string
+method: get
+*/
+userRouter.get(
+  '/verify-email', //
+  emailVerifyTokenValidator,
+  wrapAsync(verifyEmailTokenController)
+)
+
+/*desc: resend email verify token
+người dùng sẽ dùng chức năng này khi làm mất, lạc email
+phải đăng nhập thì mới cho verify
+headers{
+    Athorization: 'Bearer <access_token>'
+}
+method: post 
+path: users/resend-email-verify-token
+*/
+
+userRouter.post(
+  '/resend-verify-email',
+  accessTokenValidator, //
+  wrapAsync(resendVerifyEmailController)
+)
+
+/*desc: forgot password
+    Khi quên mật khẩu thì dùng chức năng này
+    Path: users/forgot-password
+    method: post
+    body:{
+        email: string
+        
+    }
+ */
+userRouter.post(
+  '/forgot-password',
+  forgotPassWordValidator, //
+  wrapAsync(forgotPasswordController)
+)
 export default userRouter

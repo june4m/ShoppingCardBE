@@ -1,10 +1,18 @@
 import { NextFunction, Request, Response } from 'express'
-import { LoginReqBody, LogoutReqBody, RegisterReqBody, TokenPayLoad } from '~/models/schemas/requests/user.requests'
+import {
+  LoginReqBody,
+  LogoutReqBody,
+  RegisterReqBody,
+  TokenPayLoad,
+  VerifyEmailReqQuery
+} from '~/models/schemas/requests/user.requests'
 import usersServices from '~/services/users.services'
-import { ParamsDictionary } from 'express-serve-static-core'
+import { ParamsDictionary, Query } from 'express-serve-static-core'
 import { ErrorWithStatus } from '~/models/schemas/Errors'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
+import { UserVerifyStatus } from '~/constants/enums'
+import { Verify } from 'crypto'
 //controller là handler có nhiệm vụ tập kết dữ liệu từ người dùng
 // và phân phát vào các serveices đúng chỗ
 
@@ -76,4 +84,90 @@ export const logoutController = async (
   res.status(HTTP_STATUS.OK).json({
     message: USERS_MESSAGES.LOGOUT_SUCCESS
   })
+}
+
+export const verifyEmailTokenController = async (
+  req: Request<ParamsDictionary, any, any, VerifyEmailReqQuery>,
+  res: Response,
+  next: NextFunction
+) => {
+  //khi họ bấm vào link họ sẽ gửi email_verify_token lên thông qua
+  //req.query
+  const { email_verify_token } = req.query
+  const { user_id } = req.decode_email_verify_token as TokenPayLoad // không biết user có gửi lên  không nên phải định nghĩa rõ ra
+
+  //kiểm tra xem trong database có user sở hữu là user_id trong payload
+  //                                    và email_verify_token không
+  const user = await usersServices.checkEmailVerifyToken({ user_id, email_verify_token })
+  if (user.verify == UserVerifyStatus.Banned) {
+    //nếu mà bị banned
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.UNAUTHORIZED, //402
+      message: USERS_MESSAGES.EMAIL_HAS_BEEN_BANNED
+    })
+  } else {
+    //chưa verify thì mình verify
+    //sau khi verify xong thì
+    const result = await usersServices.verifyEmail(user_id)
+    res.status(HTTP_STATUS.OK).json({
+      message: USERS_MESSAGES.VERIFY_EMAIL_SUCCESS,
+      result // ac và rf
+    })
+  }
+  //kiểm tra xem user tìm được bị banned chưa, chưa thì mới verify
+}
+
+export const resendVerifyEmailController = async (
+  req: Request<ParamsDictionary, any, any>,
+  res: Response,
+  next: NextFunction
+) => {
+  //dùng user_id tìm user đó
+  const { user_id } = req.decode_authorization as TokenPayLoad
+  const user = await usersServices.findUserById(user_id)
+  if (!user) {
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.NOT_FOUND,
+      message: USERS_MESSAGES.USER_NOT_FOUND
+    })
+  }
+  if (user.verify == UserVerifyStatus.Verified) {
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.OK,
+      message: USERS_MESSAGES.EMAIL_HAS_BEEN_VERIFIED
+    })
+  } else if (user.verify == UserVerifyStatus.Banned) {
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.OK,
+      message: USERS_MESSAGES.EMAIL_HAS_BEEN_BANNED
+    })
+  } else {
+    //chưa verify thì resend
+    await usersServices.resendEmailVerify(user_id)
+    res.status(HTTP_STATUS.OK).json({
+      message: USERS_MESSAGES.RESEND_EMAIL_VERIFY_TOKEN_SUCCESS
+    })
+  }
+  //kiểm tra user đó có verify hay bị banned không ?
+  //nếu không thì mới resendEmailVerify
+}
+
+export const forgotPasswordController = async (
+  req: Request<ParamsDictionary, any, any>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { email } = req.body
+  const hasUser = await usersServices.checkEmailExist(email)
+  if (!hasUser) {
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.NOT_FOUND,
+      message: USERS_MESSAGES.USER_NOT_FOUND
+    })
+  } else {
+    await usersServices.forgotPassword(email)
+    res.status(HTTP_STATUS.OK).json({
+      message: USERS_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD
+    })
+  }
 }
