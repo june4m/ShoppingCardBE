@@ -44,5 +44,6 @@ export const USERS_MESSAGES = {
   USER_NOT_FOUND: 'User not found',
   CHECK_EMAIL_TO_RESET_PASSWORD: 'Check Email to reset password',
   VERIFY_FORGOT_PASSWORD_TOKEN_SUCCESS: 'Verify forgot password token successfully',
-  RESET_PASSWORD_SUCCESS: 'Reset password successfully'
+  RESET_PASSWORD_SUCCESS: 'Reset password successfully',
+  GET_ME_SUCCESS: 'Get me successfully'
 } as const //để k ai chỉnh đc

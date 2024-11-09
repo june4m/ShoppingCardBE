@@ -275,6 +275,20 @@ class UsersServices {
       }
     ])
   }
+  async getMe(user_id: string) {
+    const userInfor = await databaseServices.users.findOne(
+      { _id: new ObjectId(user_id) }, //
+      {
+        //projection là phép chiếu bi // giống select trong sql
+        projection: {
+          password: 0,
+          email_verify_token: 0,
+          forgot_password_token: 0
+        }
+      }
+    )
+    return userInfor
+  }
 }
 
 //tạo instance

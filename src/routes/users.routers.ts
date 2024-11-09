@@ -11,6 +11,7 @@ import {
 } from '~/middlewares/users.middlewares'
 import {
   forgotPasswordController,
+  getMeController,
   loginController,
   logoutController,
   registerController,
@@ -141,5 +142,18 @@ userRouter.post(
   forgotPassWordTokenValidator, // kiểm tra forgot_password_token
   resetPasswordTokenValidator, //kiểm tra password, confirm_password, forgot_password_token
   wrapAsync(resetPasswordController) // tiến hành đổi mk
+)
+
+/*desc: get me: get my profile
+path: users/ me
+method: post
+
+headers:{
+    Authorization: 'Bearer <access_token>}
+*/
+userRouter.post(
+  '/me',
+  accessTokenValidator, //
+  wrapAsync(getMeController)
 )
 export default userRouter

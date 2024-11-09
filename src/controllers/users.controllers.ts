@@ -15,6 +15,7 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { UserVerifyStatus } from '~/constants/enums'
 import { Verify } from 'crypto'
+import exp from 'constants'
 //controller là handler có nhiệm vụ tập kết dữ liệu từ người dùng
 // và phân phát vào các serveices đúng chỗ
 
@@ -211,5 +212,16 @@ export const resetPasswordController = async (
   await usersServices.resetPassword({ user_id, password })
   res.status(HTTP_STATUS.OK).json({
     message: USERS_MESSAGES.RESET_PASSWORD_SUCCESS
+  })
+}
+
+export const getMeController = async (req: Request<ParamsDictionary, any, any>, res: Response, next: NextFunction) => {
+  //người dùng đã gửi lên access token để xác thực họ đã đăng nhập và yêu cầu thông tin từ mình
+  const { user_id } = req.decode_authorization as TokenPayLoad
+  //dùng user_id tìm user
+  const userInfor = await usersServices.getMe(user_id)
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.GET_ME_SUCCESS,
+    userInfor
   })
 }
