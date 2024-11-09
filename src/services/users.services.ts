@@ -1,6 +1,6 @@
 import User from '~/models/schemas/User.schema'
 import databaseServices from './database.services'
-import { LoginReqBody, RegisterReqBody } from '~/models/schemas/requests/user.requests'
+import { LoginReqBody, RegisterReqBody, UpdateMeReqBody } from '~/models/schemas/requests/user.requests'
 import { hashPassword } from '~/utils/crypto'
 import { signToken } from '~/utils/jwt'
 import { TokenType, UserVerifyStatus } from '~/constants/enums'
@@ -105,6 +105,22 @@ class UsersServices {
       })
     }
     // Nếu có thì return user ra
+    return user
+  }
+  async checkEmailVerified(user_id: string) {
+    //tìm xem đã verify hay chưa
+    const user = await databaseServices.users.findOne({
+      _id: new ObjectId(user_id),
+      verify: UserVerifyStatus.Verified
+    })
+    //nếu tìm không có thì chưa verified
+    if (!user) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.FORBBIDEN, //403
+        message: USERS_MESSAGES.USER_NOT_VERIFIED
+      })
+    }
+    //nếu có user
     return user
   }
   async findUserById(user_id: string) {
@@ -288,6 +304,48 @@ class UsersServices {
       }
     )
     return userInfor
+  }
+
+  async updateMe({ user_id, payload }: { user_id: string; payload: UpdateMeReqBody }) {
+    //user_id giúp mình tìm được user cần cập nhật
+    //payload là những gì người dùng muốn mình cập nhật, mình không biết họ đã gửi lên những gì
+    //nếu date_of_birth thì nó cần phải chuyển về dạng Date
+
+    //kiểm tra nếu người dùng đưa lên date_of_birth thì nó sẽ là payload.date_of_birth còn không nó chỉ là payload
+    const _payload = payload.date_of_birth //
+      ? { ...payload, date_of_birth: new Date(payload.date_of_birth) }
+      : payload
+    //nếu người dùng cập nhật username thì nó phải unique
+    if (_payload.username) {
+      const isDup = await databaseServices.users.findOne({ username: _payload.username })
+      if (isDup) {
+        throw new ErrorWithStatus({
+          status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          message: USERS_MESSAGES.USERNAME_ALREADY_EXISTS
+        })
+      }
+    }
+    //nếu qua hết thì cập nhật
+    const userInfor = await databaseServices.users.findOneAndUpdate(
+      { _id: new ObjectId(user_id) }, //
+      [
+        {
+          $set: {
+            ..._payload, // update toàn bộ tất cả những gì payload có
+            updated_at: '$$NOW'
+          }
+        }
+      ],
+      {
+        returnDocument: 'after', //update xong đưa cho người dùng xem luôn và không phải đưa hết thông tin cho người dùng mà hãy chặn 1 số thông tin
+        projection: {
+          password: 0,
+          email_verify_token: 0,
+          forgot_password_token: 0
+        }
+      }
+    )
+    return userInfor // trả ra để người dùng xem
   }
 }
 

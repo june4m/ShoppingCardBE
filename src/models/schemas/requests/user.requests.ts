@@ -35,3 +35,14 @@ export interface ResetPasswordReqBody {
   confirm_password: string
   forgot_password_token: string
 }
+
+export interface UpdateMeReqBody {
+  name?: string
+  date_of_birth?: string
+  bio?: string // optional
+  location?: string // optional
+  website?: string // optional
+  username?: string // optional
+  avatar?: string // optional
+  cover_photo?: string // optional
+}

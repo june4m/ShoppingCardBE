@@ -7,7 +7,8 @@ import {
   loginValidator,
   refreshTokenValidator,
   registerValidator,
-  resetPasswordTokenValidator
+  resetPasswordTokenValidator,
+  updateMeValidator
 } from '~/middlewares/users.middlewares'
 import {
   forgotPasswordController,
@@ -17,6 +18,7 @@ import {
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
+  updateMeController,
   verifyEmailTokenController,
   verifyForgotPasswordTokenController
 } from '~/controllers/users.controllers'
@@ -155,5 +157,28 @@ userRouter.post(
   '/me',
   accessTokenValidator, //
   wrapAsync(getMeController)
+)
+
+/*
+des: update profile của user
+path: '/me'
+method: patch
+Header: {Authorization: Bearer <access_token>}
+body: {
+  name?: string
+  date_of_birth?: Date
+  bio?: string // optional
+  location?: string // optional
+  website?: string // optional
+  username?: string // optional
+  avatar?: string // optional
+  cover_photo?: string // optional}
+*/
+
+userRouter.patch(
+  '/me',
+  accessTokenValidator, //
+  updateMeValidator,
+  wrapAsync(updateMeController)
 )
 export default userRouter

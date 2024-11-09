@@ -5,6 +5,7 @@ import {
   RegisterReqBody,
   ResetPasswordReqBody,
   TokenPayLoad,
+  UpdateMeReqBody,
   VerifyEmailReqQuery,
   VerifyForgotPassWordTokenReqBody
 } from '~/models/schemas/requests/user.requests'
@@ -222,6 +223,25 @@ export const getMeController = async (req: Request<ParamsDictionary, any, any>, 
   const userInfor = await usersServices.getMe(user_id)
   res.status(HTTP_STATUS.OK).json({
     message: USERS_MESSAGES.GET_ME_SUCCESS,
+    userInfor
+  })
+}
+
+export const updateMeController = async (
+  req: Request<ParamsDictionary, any, UpdateMeReqBody>, //
+  res: Response,
+  next: NextFunction
+) => {
+  //người dùng truyền lên access token => user_id
+  const { user_id } = req.decode_authorization as TokenPayLoad
+  //nội dung mà người dùng muốn cập nhật
+  const payload = req.body
+  //kiểm tra user này đã verify hay chưa
+  const isVerify = await usersServices.checkEmailVerified(user_id)
+  //đã verify rồi thì mình tiến hành cập nhật xong thì trả ra thông tin user sau cập nhật
+  const userInfor = await usersServices.updateMe({ user_id, payload })
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.UPDATE_PROFILE_SUCCESS,
     userInfor
   })
 }
