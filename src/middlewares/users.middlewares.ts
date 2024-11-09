@@ -291,3 +291,35 @@ export const forgotPassWordValidator = validate(
     ['body']
   )
 )
+
+export const forgotPassWordTokenValidator = validate(
+  checkSchema(
+    {
+      forgot_password_token: {
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.FORGOT_PASSWORD_TOKEN_IS_REQUIRED
+        },
+        custom: {
+          options: async (value: string, { req }) => {
+            try {
+              //value chính là forgot_password_token nên kiểm tra luôn
+              const decode_forgot_password_token = await verifyToken({
+                token: value,
+                privateKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string
+              })
+              ;(req as Request).decode_forgot_password_token = decode_forgot_password_token
+            } catch (error) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.UNAUTHORIZED, //401
+                message: (error as JsonWebTokenError).message
+              })
+            }
+            //
+            return true // khi kiểm tra thành công
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)

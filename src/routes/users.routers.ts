@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express'
 import {
   accessTokenValidator,
   emailVerifyTokenValidator,
+  forgotPassWordTokenValidator,
   forgotPassWordValidator,
   loginValidator,
   refreshTokenValidator,
@@ -13,7 +14,8 @@ import {
   logoutController,
   registerController,
   resendVerifyEmailController,
-  verifyEmailTokenController
+  verifyEmailTokenController,
+  verifyForgotPasswordTokenController
 } from '~/controllers/users.controllers'
 import { wrapAsync } from '~/utils/handlers'
 const userRouter = express.Router()
@@ -104,5 +106,22 @@ userRouter.post(
   '/forgot-password',
   forgotPassWordValidator, //
   wrapAsync(forgotPasswordController)
+)
+
+/*
+desc: verify forgot password Token
+route kiểm tra forgot_password_ token và còn hiệu lực không
+path: users/verify-forgot-password
+method: post
+body:{
+  forgot_password_token: string
+}
+
+*/
+
+userRouter.post(
+  '/verify-forgot-password',
+  forgotPassWordTokenValidator, //kiểm tra forrgot_password_token
+  wrapAsync(verifyForgotPasswordTokenController) //xử lý logic
 )
 export default userRouter

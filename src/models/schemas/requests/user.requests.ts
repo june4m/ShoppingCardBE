@@ -25,3 +25,7 @@ export interface LogoutReqBody {
 export interface VerifyEmailReqQuery extends ParsedQs {
   email_verify_token: string
 }
+
+export interface VerifyForgotPassWordTokenReqBody {
+  forgot_password_token: string
+}

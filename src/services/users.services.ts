@@ -85,6 +85,28 @@ class UsersServices {
     }
     return user //để có tính tái sử dụng cao thay vì return true
   }
+
+  async checkForgotPasswordToken({
+    user_id,
+    forgot_password_token
+  }: {
+    user_id: string //
+    forgot_password_token: string
+  }) {
+    //tìm user với 2 thông tin trên, không có thì gửi, có thì return ra
+    const user = await databaseServices.users.findOne({
+      _id: new ObjectId(user_id),
+      forgot_password_token
+    })
+    if (!user) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: USERS_MESSAGES.FORGOT_PASSWORD_TOKEN_IS_INVALID
+      })
+    }
+    // Nếu có thì return user ra
+    return user
+  }
   async findUserById(user_id: string) {
     return await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
   }
