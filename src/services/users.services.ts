@@ -263,6 +263,18 @@ class UsersServices {
         `)
     }
   }
+
+  async resetPassword({ user_id, password }: { user_id: string; password: string }) {
+    await databaseServices.users.updateOne({ _id: new ObjectId(user_id) }, [
+      {
+        $set: {
+          password: hashPassword(password),
+          forgot_password_token: '', //sau khi đổi mật khẩu xong hãy xóa token
+          updated_at: '$$NOW' // lưu trạng thái update bị thay đổi ở đoạn nào
+        }
+      }
+    ])
+  }
 }
 
 //tạo instance

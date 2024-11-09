@@ -3,6 +3,7 @@ import {
   LoginReqBody,
   LogoutReqBody,
   RegisterReqBody,
+  ResetPasswordReqBody,
   TokenPayLoad,
   VerifyEmailReqQuery,
   VerifyForgotPassWordTokenReqBody
@@ -189,5 +190,26 @@ export const verifyForgotPasswordTokenController = async (
   await usersServices.checkForgotPasswordToken({ user_id, forgot_password_token })
   res.status(HTTP_STATUS.OK).json({
     message: USERS_MESSAGES.VERIFY_FORGOT_PASSWORD_TOKEN_SUCCESS
+  })
+}
+
+export const resetPasswordController = async (
+  req: Request<ParamsDictionary, any, ResetPasswordReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  //người dùng gửi lên forgot_password_token
+  const { forgot_password_token, password } = req.body
+  //mình đã xác thực mã rồi
+  //nhưng  mà chỉ thực thi khi forrgot_password_token còn hiệu lực với user
+  //nên mình cần tìm user thông qua user_id
+  const { user_id } = req.decode_forgot_password_token as TokenPayLoad
+  //tìm user nào đang có 2 thông tin trên, nếu không tìm được nghĩa là forrgot_password_token
+  // đã được thay thế hoặc đã bị xóa rồi
+  await usersServices.checkForgotPasswordToken({ user_id, forgot_password_token })
+  //nếu còn hiệu lực thì tiến hành cập nhật password
+  await usersServices.resetPassword({ user_id, password })
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.RESET_PASSWORD_SUCCESS
   })
 }

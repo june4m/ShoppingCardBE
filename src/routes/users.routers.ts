@@ -6,7 +6,8 @@ import {
   forgotPassWordValidator,
   loginValidator,
   refreshTokenValidator,
-  registerValidator
+  registerValidator,
+  resetPasswordTokenValidator
 } from '~/middlewares/users.middlewares'
 import {
   forgotPasswordController,
@@ -14,6 +15,7 @@ import {
   logoutController,
   registerController,
   resendVerifyEmailController,
+  resetPasswordController,
   verifyEmailTokenController,
   verifyForgotPasswordTokenController
 } from '~/controllers/users.controllers'
@@ -123,5 +125,21 @@ userRouter.post(
   '/verify-forgot-password',
   forgotPassWordTokenValidator, //kiểm tra forrgot_password_token
   wrapAsync(verifyForgotPasswordTokenController) //xử lý logic
+)
+
+/* desc: reset-password
+path: users/reset-password
+method: post
+body: {
+  password: string,
+  confirm_password: string,
+  forgot_password_token: string
+}
+*/
+userRouter.post(
+  '/reset-password',
+  forgotPassWordTokenValidator, // kiểm tra forgot_password_token
+  resetPasswordTokenValidator, //kiểm tra password, confirm_password, forgot_password_token
+  wrapAsync(resetPasswordController) // tiến hành đổi mk
 )
 export default userRouter
