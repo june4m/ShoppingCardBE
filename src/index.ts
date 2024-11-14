@@ -4,6 +4,8 @@ import databaseServices from './services/database.services'
 import { defaultErrorHandler } from './middlewares/error.middlewares'
 import mediaRouter from './routes/media.router'
 import { initForder } from './utils/file'
+import { stat } from 'fs'
+import staticRouter from './routes/static.routers'
 // console.log(new Date(2004, 6, 4).toISOString())
 
 //dùng express tạo seveer (app)
@@ -16,6 +18,7 @@ app.use(express.json()) //sever dùng midlewares biến đổi các chuỗi json
 //sever dùng userRouter
 app.use('/users', userRouter)
 app.use('/medias', mediaRouter)
+app.use('/static', staticRouter)
 //app mở ở port 3000
 //localhost:3000/users/get-me
 app.use(defaultErrorHandler)
