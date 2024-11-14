@@ -33,6 +33,7 @@ class DatabaseServices {
     return this.db.collection(process.env.DB_REFRESH_TOKENS_COLLECTION as string)
   }
 }
-//tạo bẩn thể instance
+
+//tạo bản thể instance
 const databaseServices = new DatabaseServices()
 export default databaseServices

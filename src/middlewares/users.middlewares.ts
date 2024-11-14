@@ -4,8 +4,10 @@ import { verify } from 'crypto'
 import { Request, Response, NextFunction } from 'express'
 import { checkSchema, ParamSchema, validationResult } from 'express-validator'
 import { JsonWebTokenError } from 'jsonwebtoken'
+import { values } from 'lodash'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
+import { REGEX_USERNAME } from '~/constants/regex'
 import { ErrorWithStatus } from '~/models/schemas/Errors'
 import { verifyToken } from '~/utils/jwt'
 import { validate } from '~/utils/validation'
@@ -379,7 +381,7 @@ export const updateMeValidator = validate(
       website: {
         optional: true,
         isString: {
-          errorMessage: USERS_MESSAGES.WEBSITE_MUST_BE_A_STRING ////messages.ts thêm WEBSITE_MUST_BE_A_STRING: 'Website must be a string'
+          errorMessage: USERS_MESSAGES.WEBSITE_MUST_BE_A_STRING //messages.ts thêm WEBSITE_MUST_BE_A_STRING: 'Website must be a string'
         },
         trim: true,
         isLength: {
@@ -394,7 +396,7 @@ export const updateMeValidator = validate(
       username: {
         optional: true,
         isString: {
-          errorMessage: USERS_MESSAGES.USERNAME_MUST_BE_A_STRING ////messages.ts thêm USERNAME_MUST_BE_A_STRING: 'Username must be a string'
+          errorMessage: USERS_MESSAGES.USERNAME_MUST_BE_A_STRING //messages.ts thêm USERNAME_MUST_BE_A_STRING: 'Username must be a string'
         },
         trim: true,
         isLength: {
@@ -403,10 +405,30 @@ export const updateMeValidator = validate(
             max: 50
           },
           errorMessage: USERS_MESSAGES.USERNAME_LENGTH_MUST_BE_LESS_THAN_50 //messages.ts thêm USERNAME_LENGTH_MUST_BE_LESS_THAN_50: 'Username length must be less than 50'
+        },
+        custom: {
+          options: (value: string, { req }) => {
+            //value chính là username
+            if (!REGEX_USERNAME.test(value)) {
+              throw new Error(USERS_MESSAGES.USERNAME_IS_INVALID)
+            }
+            return true
+          }
         }
       },
       avatar: imageSchema,
       cover_photo: imageSchema
+    },
+    ['body']
+  )
+)
+
+export const changePasswordValidator = validate(
+  checkSchema(
+    {
+      old_password: passwordSchema,
+      password: passwordSchema,
+      confirm_password: confirmPasswordSchema
     },
     ['body']
   )

@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express'
 import {
   accessTokenValidator,
+  changePasswordValidator,
   emailVerifyTokenValidator,
   forgotPassWordTokenValidator,
   forgotPassWordValidator,
@@ -11,10 +12,12 @@ import {
   updateMeValidator
 } from '~/middlewares/users.middlewares'
 import {
+  changePasswordController,
   forgotPasswordController,
   getMeController,
   loginController,
   logoutController,
+  refreshTokenController,
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
@@ -23,6 +26,8 @@ import {
   verifyForgotPasswordTokenController
 } from '~/controllers/users.controllers'
 import { wrapAsync } from '~/utils/handlers'
+import { filterMiddleWare } from '~/middlewares/common.midlewares'
+import { UpdateMeReqBody } from '~/models/schemas/requests/user.requests'
 const userRouter = express.Router()
 
 //Để loginValidator trong này là hợp lệ vì đây là middleware
@@ -177,8 +182,53 @@ body: {
 
 userRouter.patch(
   '/me',
+  //cần 1 midlewere lọc ra những gì cần lấy trong req.body
+  filterMiddleWare<UpdateMeReqBody>([
+    'name',
+    'date_of_birth',
+    'bio',
+    'location',
+    'website',
+    'avatar',
+    'username',
+    'cover_photo'
+  ]),
   accessTokenValidator, //
   updateMeValidator,
   wrapAsync(updateMeController)
+)
+
+/*
+desc: change-password
+path: users/change-password
+method: put // dùng post cũng được
+head: {
+    Authorization: 'Bearer <access_token>'
+}
+body:{
+    old_password: string,
+    new_password: string,
+    confirm_password: string
+}
+*/
+
+userRouter.put(
+  '/change-password', //
+  accessTokenValidator,
+  changePasswordValidator,
+  wrapAsync(changePasswordController)
+)
+/*
+desc: refresh_token
+path: users/refresh-token
+method: post
+body:{
+  refresh_token: string
+}
+*/
+userRouter.post(
+  '/refresh-token', //
+  refreshTokenValidator,
+  wrapAsync(refreshTokenController)
 )
 export default userRouter

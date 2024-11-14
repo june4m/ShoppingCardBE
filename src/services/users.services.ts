@@ -10,7 +10,7 @@ import { ErrorWithStatus } from '~/models/schemas/Errors'
 import HTTP_STATUS from '~/constants/httpStatus'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import { ObjectId } from 'mongodb'
-import { update } from 'lodash'
+import { set, update } from 'lodash'
 dotenv.config()
 class UsersServices {
   private signAccessToken(user_id: string) {
@@ -137,6 +137,7 @@ class UsersServices {
       new User({
         _id: user_id,
         email_verify_token,
+        username: `user${user_id.toString()}`,
         ...payload,
         password: hashPassword(payload.password),
         date_of_birth: new Date(payload.date_of_birth) //overwrite: ghi đè lên
@@ -346,6 +347,79 @@ class UsersServices {
       }
     )
     return userInfor // trả ra để người dùng xem
+  }
+
+  async changePassword({
+    user_id,
+    old_password,
+    password
+  }: {
+    user_id: string
+    old_password: string
+    password: string
+  }) {
+    //tìm user bằng username và old_password
+    const user = await databaseServices.users.findOne({
+      _id: new ObjectId(user_id),
+      password: hashPassword(old_password)
+    })
+    // kiểm tra nếu không có user thì ném ra thông báo
+    if (!user) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: USERS_MESSAGES.USER_NOT_FOUND
+      })
+    }
+    //nếu có thì cập nhật lại password
+    //cập nhật lại password và forgot_password_token
+    //tất nhiên là lưu password đã hash rồi
+
+    await databaseServices.users.updateOne(
+      {
+        _id: new ObjectId(user_id)
+      },
+      [
+        {
+          $set: {
+            password: hashPassword(password),
+            updated_at: '$$NOW'
+          }
+        }
+      ]
+      //nếu bạn muốn ngta đổi mk xong tự động đăng nhập luôn thì trả về access_token và refresh_token
+      //ở đây mình chỉ cho ngta đổi mk thôi, nên trả về message
+    )
+    return {
+      message: USERS_MESSAGES.CHANGEE_PASSWORD_SUCCESS
+    }
+  }
+  async refreshToken({
+    user_id,
+    refresh_token //
+  }: {
+    user_id: string
+    refresh_token: string
+  }) {
+    //tạo ac và rf mới
+    const [access_token, new_refresh_token] = await Promise.all([
+      this.signAccessToken(user_id),
+      this.signRefreshToken(user_id)
+    ])
+    //lưu rf mới
+    await databaseServices.refresh_tokens.insertOne(
+      new RefreshToken({
+        token: new_refresh_token,
+        user_id: new ObjectId(user_id)
+      })
+    )
+    //xóa rf cũ
+    await databaseServices.refresh_tokens.deleteOne({ token: refresh_token })
+
+    //ném ra rf và ac mới cho người dùng
+    return {
+      access_token,
+      refresh_token: new_refresh_token
+    }
   }
 }
 

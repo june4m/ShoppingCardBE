@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from 'express'
 import {
+  ChangePasswordReqBody,
   LoginReqBody,
   LogoutReqBody,
+  RefreshTokenReqBody,
   RegisterReqBody,
   ResetPasswordReqBody,
   TokenPayLoad,
@@ -17,6 +19,7 @@ import { USERS_MESSAGES } from '~/constants/messages'
 import { UserVerifyStatus } from '~/constants/enums'
 import { Verify } from 'crypto'
 import exp from 'constants'
+import databaseServices from '~/services/database.services'
 //controller là handler có nhiệm vụ tập kết dữ liệu từ người dùng
 // và phân phát vào các serveices đúng chỗ
 
@@ -243,5 +246,45 @@ export const updateMeController = async (
   res.status(HTTP_STATUS.OK).json({
     message: USERS_MESSAGES.UPDATE_PROFILE_SUCCESS,
     userInfor
+  })
+}
+
+export const changePasswordController = async (
+  req: Request<ParamsDictionary, any, ChangePasswordReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  //khi người dùng muốn đổi mật khẩu, thì họ phải đăng nhập
+  //lúc đấy sẽ có được access token => user_id
+  //lấy user id từ  decode_authorization
+  const { user_id } = req.decode_authorization as TokenPayLoad
+  //old_password để biết họ có sở hữu account
+  const { old_password, password } = req.body
+
+  const result = await usersServices.changePassword({
+    user_id, //
+    old_password,
+    password
+  })
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.CHANGEE_PASSWORD_SUCCESS
+  })
+}
+
+export const refreshTokenController = async (
+  req: Request<ParamsDictionary, any, RefreshTokenReqBody>, //
+  res: Response,
+  next: NextFunction
+) => {
+  // kiểm tra  refresh_token còn hiệu lực trong database hay không
+  const { user_id } = req.decode_refresh_token as TokenPayLoad
+  const { refresh_token } = req.body
+  await usersServices.checkRefreshToken({ user_id, refresh_token })
+  // nếu mà kiểm tra không có gì xảy ra thì mình sẽ tiến hành refresh token
+  const result = await usersServices.refreshToken({ user_id, refresh_token })
+  // ta cần user_id để tìm và refresh token để xóa cái mã cũ
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.REFESH_TOKEN_SUCCESS,
+    result
   })
 }
